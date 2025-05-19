@@ -21,7 +21,6 @@ void loop()
 
     if(last_print < millis())
     {
-        // Convert set_point в проценты с округлением
         int set_point_percent = setPointToPercent(set_point);
         printf("Speed: %d, Set point: %d%%, Power: %d\n\r", (int)speed, set_point_percent, power);
 
@@ -51,7 +50,6 @@ void serialEvent()
 
     int percent = atoi(str);
 
-    // Convert проценты в диапозон 0-32767 с округлением
     set_point = percentToSetPoint(percent);
     pid_set_setpoint(&pid, set_point);
 }
@@ -59,6 +57,7 @@ void serialEvent()
 
 int setPointToPercent(int set_point)
 {
+    // Convert set_point в проценты с округлением
     return (int)(((long)(set_point) * 100 + 16383 ) / 32767);
 }
 
