@@ -8,6 +8,7 @@
 #include "pid.h"
 #include "MeanFilter.h"
 #include "simpleMeanFilter.h"
+#include "dd_h_bridge.h"
 
 void setup(void);
 
@@ -16,5 +17,8 @@ void loop(void);
 void timer_handle_interrupts(int timer);
 
 void serialEvent();
+
+int setPointToPercent(int set_point);
+int percentToSetPoint(int percent);
 
 #endif // !MAIN_H

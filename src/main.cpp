@@ -2,7 +2,7 @@
 
 pid_t pid;
 
-volatile int set_point = (int)((SETPOINT * 32767L + 50L) / 100L);
+volatile int set_point = (int)SETPOINT;
 volatile double speed = 0.0;
 volatile uint8_t power = 0;
 
@@ -10,12 +10,9 @@ void setup()
 {
     own_stdio_setup();
     timer_init_ISR_100Hz(TIMER_DEFAULT); 
-
+    dd_h_bridge_setup();
     encode_setup();
     pid_init(&pid, set_point, KP, KI, KD, PWM_MIN, PWM_MAX);
-
-    digitalWrite(IN_A, HIGH);
-    digitalWrite(IN_B, LOW);
 }
 
 void loop() 
@@ -25,7 +22,7 @@ void loop()
     if(last_print < millis())
     {
         // Convert set_point в проценты с округлением
-        int set_point_percent = (int)(( (long)set_point * 100 + 16383 ) / 32767 );
+        int set_point_percent = setPointToPercent(set_point);
         printf("Speed: %d, Set point: %d%%, Power: %d\n\r", (int)speed, set_point_percent, power);
 
         last_print = millis() + PRINT_RECURENCE;
@@ -35,13 +32,16 @@ void loop()
 void timer_handle_interrupts(int timer)
 {
     static uint16_t count;
+    static uint16_t filtered_count;
 
     count = encode_get_count();
-    count = meanFilter(count);
-    speed = count * CONSTANT_TO_RPM;
- 
+    filtered_count = meanFilter(count);
+    
+    speed = filtered_count * CONSTANT_TO_RPM;
+    
     power = pid_compute(&pid, speed);
-    analogWrite(IN_EN, power);
+    
+    set_h_bridge_power(power);
 }
 
 void serialEvent()
@@ -51,6 +51,20 @@ void serialEvent()
 
     int percent = atoi(str);
 
+    // Convert проценты в диапозон 0-32767 с округлением
+    set_point = percentToSetPoint(percent);
+    pid_set_setpoint(&pid, set_point);
+}
+
+
+int setPointToPercent(int set_point)
+{
+    return (int)(((long)(set_point) * 100 + 16383 ) / 32767);
+}
+
+
+int percentToSetPoint(int percent)
+{
     if(percent < 0)
     {
         percent = 0;
@@ -61,6 +75,5 @@ void serialEvent()
     }
 
     // Convert проценты в диапозон 0-32767 с округлением
-    set_point = (int)(( (long)percent * 32767 + 50 ) / 100 );
-    pid_set_setpoint(&pid, set_point);
+    return (int)(( (long)percent * 32767 + 50 ) / 100 );
 }

@@ -16,6 +16,8 @@
 #define KI 10.1
 #define KD 0.16
 
+#define SETPOINT (25.0 * 32767L + 50L) / 100L
+
 #define PWM_MIN 0
 #define PWM_MAX 255
 
